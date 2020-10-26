@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>每个年龄段购买人数实时分析</title>
+    <script type="text/javascript" src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdn.bootcss.com/socket.io/1.5.1/socket.io.min.js"></script>
+    <!-- ECharts 3 引入 -->
+    <script src="/static/js/echarts.js"></script>
+</head>
+
+<body>
+    <div id="main" style="height:500px;border:1px solid #ccc;padding:10px;"></div>
+
+    <script type="text/javascript">
+
+    var myChart = echarts.init(document.getElementById('main'));
+    myChart.setOption({
+        title: {
+            text: '每个年龄段购买人数实时分析'
+        },
+        tooltip: {},
+        toolbox: {
+            feature: {
+                saveAsImage: {}
+            }
+        },
+        legend: {
+            data:['>18', '[18, 24]', '[25, 29]', '[30, 34]', '[35, 39]', '[40, 49]', '>=50'],
+            orient: 'vertical',
+            x:'left',      //可设定图例在左、右、居中
+            y:'center',     //可设定图例在上、下、居中
+        },
+        xAxis: {
+            data: [],
+            boundaryGap: false,   // 数据与y轴平齐
+        },
+        yAxis: {},
+        series: [{
+            name: '>18',
+            type: 'line',
+            data: []
+        },
+        {
+            name: '[30, 34]',
+            type: 'line',
+            data: []
+        },
+        {
+            name: '[25, 29]',
+            type: 'line',
+            data: []
+        },
+        {
+            name: '[30, 34]',
+            type: 'line',
+            data: []
+        },
+        {
+            name: '[35, 39]',
+            type: 'line',
+            data: []
+        },
+        {
+            name: '[40, 49]',
+            type: 'line',
+            data: []
+        },
+        {
+            name: '>=50',
+            type: 'line',
+            data: []
+        }]
+    });
+
+
+    var time = ["","","","","","","","","",""],
+        one = [0,0,0,0,0,0,0,0,0,0],
+        two = [0,0,0,0,0,0,0,0,0,0],
+        three = [0,0,0,0,0,0,0,0,0,0],
+        four = [0,0,0,0,0,0,0,0,0,0],
+        five = [0,0,0,0,0,0,0,0,0,0],
+        six = [0,0,0,0,0,0,0,0,0,0],
+        seven = [0,0,0,0,0,0,0,0,0,0];
+
+    //准备好统一的 callback 函数
+    var update_mychart = function (res) {
+    //res是json格式的response对象
+
+        // 隐藏加载动画
+        myChart.hideLoading();
+
+        // 准备数据
+        time.push(res.data[0]);
+        one.push(parseFloat(res.data[1]));
+        two.push(parseFloat(res.data[2]));
+        three.push(parseFloat(res.data[3]));
+        four.push(parseFloat(res.data[4]));
+        five.push(parseFloat(res.data[5]));
+        six.push(parseFloat(res.data[6]));
+        seven.push(parseFloat(res.data[7]));
+        if (time.length >= 10){
+            time.shift();
+            one.shift();
+            two.shift();
+            three.shift();
+            four.shift();
+            five.shift();
+            six.shift();
+            seven.shift();
+        }
+
+        // 填入数据
+        myChart.setOption({
+            xAxis: {
+                data: time
+            },
+            series: [{
+                name: '>18', // 根据名字对应到相应的系列
+                data: one
+            },
+            {
+                name: '[18, 24]', // 根据名字对应到相应的系列
+                data: two
+            },
+            {
+                name: '[25, 29]', // 根据名字对应到相应的系列
+                data: three
+            },
+            {
+                name: '[30, 34]', // 根据名字对应到相应的系列
+                data: four
+            },
+            {
+                name: '[35, 39]', // 根据名字对应到相应的系列
+                data: five
+            },
+            {
+                name: '[40, 49]', // 根据名字对应到相应的系列
+                data: six
+            },
+            {
+                name: '>=50', // 根据名字对应到相应的系列
+                data: seven
+            },]
+        });
+
+    };
+
+    // 首次显示加载动画
+    myChart.showLoading();
+
+    // 建立socket连接，等待服务器“推送”数据，用回调函数更新图表
+    $(document).ready(function() {
+        namespace = '/test';
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+        socket.on('server_response', function(res) {
+            update_mychart(res);
+        });
+
+    });
+
+    </script>
+</body>
+</html>

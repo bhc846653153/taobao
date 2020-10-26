@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>用户区域实时分布图</title>
+    <script type="text/javascript" src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdn.bootcss.com/socket.io/1.5.1/socket.io.min.js"></script>
+    <!-- ECharts 3 引入 -->
+    <script src="../static/js/echarts.min.js"></script>
+    <!--引入中国地图js-->
+    <script src="../static/js/china.js"></script>
+</head>
+<body>
+    <div id="main" style="height:500px;width:1000px;border:1px solid #ccc;padding:10px;"></div>
+    <script type="text/javascript">
+        var sex_myChart = echarts.init(document.getElementById('main'));
+        sex_myChart.setOption({
+            title: {
+                text: '用户的区域分布'
+            },
+            tooltip: {
+                trigger: 'item',
+                formatter: "数量 <br> {b}: {c}"
+            },
+            toolbox: {
+                feature: {
+                    saveAsImage: {}
+                }
+            },
+            grid: {
+                height: 400,
+                width: 8,
+                right: 80,
+                bottom: 10
+            },
+             visualMap: {
+                    seriesIndex: 0,
+                    min: 0,
+                    max: 100,
+                    text: ['高', '低'], // 文本，默认为数值文本
+                    calculable: true
+                },
+
+            geo: {
+                map: 'china',
+                aspectScale: 0.75,
+                top: 5,
+                bottom: 15,
+                label: {
+                    normal: {
+                        show: true,
+                    },
+                    emphasis: {
+                        show: true,
+                    }
+                },
+                roam: false,
+            },
+            series: [{
+                zlevel: 1,
+                name: 'china',
+                type: 'map',
+                mapType: 'china',
+                selectedMode: 'multiple',
+                roam: true,
+                left: 0,
+                right: '15%',
+                geoIndex: 0,
+                aspectScale: 0.75, //长宽比
+                label: {
+                    normal: {
+                        show: true,
+                    },
+                    emphasis: {
+                        show: true,
+                    }
+                },
+                data: [],
+            }]
+        });
+        var map_data = [{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}];
+        //准备好统一的 callback 函数
+        var update_mychart = function (res) {
+
+            //res是json格式的response对象
+            // 隐藏加载动画
+            sex_myChart.hideLoading();
+
+            map_data.push(res.data[0]);
+            console.log(res.data[0]);
+            if (map_data.length >= 10) {
+                map_data.shift();
+            }
+            // 填入数据
+            sex_myChart.setOption({
+                series: [{
+                    data: map_data
+                }
+                ]
+            });
+        };
+        // 首次显示加载动画
+        sex_myChart.showLoading();
+        // 建立socket连接，等待服务器“推送”数据，用回调函数更新图表
+        $(document).ready(function () {
+            namespace = '/test';
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+            socket.on('server_response', function (res) {
+                update_mychart(res);
+            });
+        });
+
+    </script>
+</body>
+</html>

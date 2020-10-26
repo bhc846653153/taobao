@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>男女购买人数实时分析</title>
+    <script type="text/javascript" src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdn.bootcss.com/socket.io/1.5.1/socket.io.min.js"></script>
+    <!-- ECharts 3 引入 -->
+    <script src="/static/js/echarts.js"></script>
+</head>
+
+<body>
+    <div id="main" style="height:500px;border:1px solid #ccc;padding:10px;"></div>
+
+    <script type="text/javascript">
+
+    var myChart = echarts.init(document.getElementById('main'));
+
+    myChart.setOption({
+        title: {
+            text: '男女购买人数实时分析'
+        },
+        tooltip: {},
+        toolbox: {
+            feature: {
+                saveAsImage: {}
+            }
+        },
+        legend: {
+            data:['girl', 'boy']
+        },
+        xAxis: {
+            data: [],
+            boundaryGap: false,
+        },
+        yAxis: {},
+        series: [{
+            name: 'girl',
+            type: 'line',
+            areaStyle: {},
+            data: []
+        },
+        {
+            name: 'boy',
+            type: 'line',
+            areaStyle: {},
+            data: []
+        }]
+    });
+
+
+    var time = ["","","","","","","","","",""],
+        girl = [0,0,0,0,0,0,0,0,0,0];
+        boy = [0,0,0,0,0,0,0,0,0,0];
+
+
+    //准备好统一的 callback 函数
+    var update_mychart = function (res) {
+    //res是json格式的response对象
+
+        // 隐藏加载动画
+        myChart.hideLoading();
+
+        // 准备数据
+        time.push(res.data[0]);
+        girl.push(parseFloat(res.data[1]));
+        boy.push(parseFloat(res.data[2]));
+        if (time.length >= 10){
+            time.shift();
+            girl.shift();
+            boy.shift();
+        }
+
+        // 填入数据
+        myChart.setOption({
+            xAxis: {
+                data: time
+            },
+            series: [{
+                name: 'girl', // 根据名字对应到相应的系列
+                data: girl
+            },
+            {
+                name: 'boy', // 根据名字对应到相应的系列
+                data: boy
+            }]
+        });
+
+    };
+
+    // 首次显示加载动画
+    myChart.showLoading();
+
+
+    // 建立socket连接，等待服务器“推送”数据，用回调函数更新图表
+    $(document).ready(function() {
+        namespace = '/test';
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+        socket.on('server_response', function(res) {
+            update_mychart(res);
+        });
+
+    });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>用户行为漏斗图</title>
+    <script type="text/javascript" src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdn.bootcss.com/socket.io/1.5.1/socket.io.min.js"></script>
+    <!-- ECharts 3 引入 -->
+    <script src="../static/js/echarts.min.js"></script>
+</head>
+<body>
+    <div id="action_main" style="height:400px;width:600px;border:1px solid #ccc;padding:10px;"></div>
+    <script type="text/javascript">
+        var action_myChart = echarts.init(document.getElementById('action_main'));
+        action_myChart.setOption({
+            title: {
+                text: '用户行为漏斗图',
+            },
+            tooltip: {
+                trigger: 'item',
+                formatter: "{a} <br/>{b} : {c}"
+            },
+            toolbox: {
+                feature: {
+                    dataView: {readOnly: false},
+                    restore: {},
+                    saveAsImage: {}
+                }
+            },
+            legend: {
+                data: ['购买','收藏','点击','加入购物车']
+            },
+
+            series: [
+                {
+                    name:'漏斗图',
+                    type:'funnel',
+                    left: '10%',
+                    top: 60,
+                    //x2: 80,
+                    bottom: 60,
+                    width: '80%',
+                    // height: {totalHeight} - y - y2,
+                    min: 0,
+                    max: 100,
+                    minSize: '0%',
+                    maxSize: '100%',
+                    sort: 'descending',
+                    gap: 2,
+                    label: {
+                        show: true,
+                        position: 'inside'
+                    },
+                    labelLine: {
+                        length: 10,
+                        lineStyle: {
+                            width: 1,
+                            type: 'solid'
+                        }
+                    },
+                    itemStyle: {
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    },
+                    emphasis: {
+                        label: {
+                            fontSize: 20
+                        }
+                    },
+                    data: []
+                }
+            ]
+        });
+        var pv = 0;
+        var buy = 0;
+        var fav = 0;
+        var cart = 0;
+        //准备好统一的 callback 函数
+        var update_mychart = function (res) {
+
+            //res是json格式的response对象
+            // 隐藏加载动画
+            action_myChart.hideLoading();
+
+            pv = res.data[0];
+            buy = res.data[1];
+            fav = res.data[2];
+            cart = res.data[3];
+
+            console.log(res.data);
+            if (pv.length >= 10) {
+                pv.shift();
+                buy.shift();
+                fav.shift();
+                cart.shift();
+
+
+            }
+            // 填入数据
+            action_myChart.setOption({
+                series: [{
+                    data: [
+                    {'name': '点击', 'value': pv},
+                    {'name': '购买', 'value': buy} ,
+                    {'name': '收藏', 'value': fav},
+                    {'name': '加入购物车', 'value': fav}
+                ]
+                }
+                ]
+            });
+        };
+        // 首次显示加载动画
+        action_myChart.showLoading();
+        // 建立socket连接，等待服务器“推送”数据，用回调函数更新图表
+        $(document).ready(function () {
+            namespace = '/test';
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+            socket.on('server_response', function (res) {
+                update_mychart(res);
+            });
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>商品类别实施分布统计</title>
+    <script type="text/javascript" src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdn.bootcss.com/socket.io/1.5.1/socket.io.min.js"></script>
+    <!-- ECharts 3 引入 -->
+    <script src="../static/js/echarts.min.js"></script>
+</head>
+<body>
+
+    <div id="cat_main" style="height:400px;width:1000px;border:1px solid #ccc;padding:10px;"></div>
+    <script type="text/javascript">
+        var cat_myChart = echarts.init(document.getElementById('cat_main'));
+        cat_myChart.setOption({
+            title: {
+                text: '商品的类型分布图'
+            },
+            tooltip: {
+                trigger: 'axis',
+                backgroundColor: 'lightgoldenrodyellow',
+                textStyle: {
+                    color: "red"
+                }
+            },
+            toolbox: {
+                feature: {
+                    saveAsImage: {}
+                }
+            },
+            dataZoom: [
+                {
+                    show: true,
+                    realtime: true,
+                    start: 30,
+                    end: 50,
+                },
+                {
+                    type: 'inside',
+                    realtime: true,
+                    start: 30,
+                    end: 50,
+                }
+            ],
+
+            xAxis: {
+                name: 'cat_id',
+                data: []
+            },
+            yAxis: {
+                name: '数量/个',
+
+            },
+            series: [{
+                name: 'cat_id',
+                smooth: true,
+                type: 'bar',
+                data: []
+            },
+
+            ]
+        });
+        var cat = ["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""],
+            count = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+
+        //准备好统一的 callback 函数
+        var update_mychart = function (res) {
+
+            //res是json格式的response对象
+            // 隐藏加载动画
+            cat_myChart.hideLoading();
+            // 准备数据
+            cat.push(res.data[0]);
+            count.push(parseFloat(res.data[1]));
+
+            if (cat.length >= 10) {
+                cat.shift();
+                count.shift();
+            }
+            // 填入数据
+            cat_myChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: '{a} <br/>{b}: {c}个',
+                    backgroundColor: 'lightgoldenrodyellow',
+                    axisPointer: { // 坐标轴指示器，坐标轴触发有效
+                        type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
+                    },
+                    textStyle: {
+                        color: "red"
+                    }
+                },
+                xAxis: {
+                    data: cat
+                },
+                grid: {
+                    right: 80,
+                },
+
+                series: [{
+                    name: 'cat_id', // 根据名字对应到相应的系列
+                    data: count,
+                    barWidth: '40%',
+                }
+                ]
+            });
+        };
+        // 首次显示加载动画
+        cat_myChart.showLoading();
+        // 建立socket连接，等待服务器“推送”数据，用回调函数更新图表
+        $(document).ready(function () {
+            namespace = '/test';
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+            socket.on('server_response', function (res) {
+                update_mychart(res);
+            });
+        });
+
+    </script>
+</body>
+</html>

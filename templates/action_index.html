@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>每日活跃人数实时分析</title>
+    <script type="text/javascript" src="//cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdn.bootcss.com/socket.io/1.5.1/socket.io.min.js"></script>
+    <!-- ECharts 3 引入 -->
+    <script src="/static/js/echarts.min.js"></script>
+</head>
+
+<body>
+    <div id="main" style="height:500px;border:1px solid #ccc;padding:10px;"></div>
+
+    <script type="text/javascript">
+
+    var myChart = echarts.init(document.getElementById('main'));
+
+    myChart.setOption({
+        title: {
+            text: '每日活跃人数实时分析',
+            subtext: 'click:点击，join:加入购物车，buy:购买，collect:收藏'
+        },
+        tooltip: {},
+        legend: {
+            data:['click', 'join', 'buy', 'collect']
+        },
+        toolbox: {
+            feature: {
+                saveAsImage: {}
+            }
+        },
+        xAxis: {
+            data: [],
+            boundaryGap: false,
+        },
+        yAxis: {},
+        series: [{
+            name: 'click',
+            type: 'line',
+            // areaStyle: {},
+            data: []
+        },
+        {
+            name: 'join',
+            type: 'line',
+            // areaStyle: {},
+            data: []
+        },
+        {
+            name: 'buy',
+            type: 'line',
+            // areaStyle: {},
+            data: []
+        },
+        {
+            name: 'collect',
+            type: 'line',
+            // areaStyle: {},
+            data: []
+        }]
+    });
+
+
+    var time = ["","","","","","","","","",""],
+        click = [0,0,0,0,0,0,0,0,0,0],
+        join = [0,0,0,0,0,0,0,0,0,0],
+        buy = [0,0,0,0,0,0,0,0,0,0],
+        collect = [0,0,0,0,0,0,0,0,0,0];
+
+
+    //准备好统一的 callback 函数
+    var update_mychart = function (res) {
+    //res是json格式的response对象
+
+        // 隐藏加载动画
+        myChart.hideLoading();
+
+        // 准备数据
+        time.push(res.data[0]);
+        click.push(parseFloat(res.data[1]));
+        join.push(parseFloat(res.data[2]));
+        buy.push(parseFloat(res.data[3]));
+        collect.push(parseFloat(res.data[4]));
+        if (time.length >= 10){
+            time.shift();
+            click.shift();
+            join.shift();
+            buy.shift();
+            collect.shift();
+        }
+
+        // 填入数据
+        myChart.setOption({
+            xAxis: {
+                data: time
+            },
+            series: [{
+                name: 'click', // 根据名字对应到相应的系列
+                data: click
+            },
+            {
+                name: 'join', // 根据名字对应到相应的系列
+                data: join
+            },
+            {
+                name: 'buy', // 根据名字对应到相应的系列
+                data: buy
+            },
+            {
+                name: 'collect', // 根据名字对应到相应的系列
+                data: collect
+            }]
+        });
+
+    };
+
+    // 首次显示加载动画
+    myChart.showLoading();
+
+    // 建立socket连接，等待服务器“推送”数据，用回调函数更新图表
+    $(document).ready(function() {
+        namespace = '/test';
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+        socket.on('server_response', function(res) {
+            update_mychart(res);
+        });
+    });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+/usr/local/spark-2.4.5-bin-hadoop2.7/bin/spark-submit --driver-class-path /usr/local/spark-2.4.5-bin-hadoop2.7/jars/*:/usr/local/spark-2.4.5-bin-hadoop2.7/jars/kafka/* --class "org.apache.spark.examples.streaming.KafkaCatCount" /usr/local/spark-2.4.5-bin-hadoop2.7/taocode/kafka/scala/cat/target/scala-2.11/cat-project_2.11-1.0.jar  192.168.100.21:9092 1 cat
